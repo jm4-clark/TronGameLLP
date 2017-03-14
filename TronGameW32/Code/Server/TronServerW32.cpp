@@ -1,6 +1,7 @@
 // TronServerW32.cpp : Defines the entry point for the console application.
 //
 
+#include <Server/stdafx.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -57,31 +58,31 @@ void connect(sf::TcpListener& tcp_listener, sf::SocketSelector& selector, TcpCli
 
 void receiveMsg(TcpClients& tcp_clients, sf::SocketSelector&selector)
 {	// loop through all tcp clients to find sender
-
-	for (auto& sender : tcp_clients)
+	for (TcpClients::iterator it = tcp_clients.begin(); it != tcp_clients.end(); it++)
 	{
-		auto& sender_ref = *sender.get();
-		if (selector.isReady(sender_ref))
+		for (auto& sender : tcp_clients)
 		{
-			sf::Packet packet;
-			std::string string = "Test";
-			packet << string;
-
-
-			// print received string to console
-			sf::Packet RecivedPacket;
-			std::string clientMessage;
-			for (auto& sender : tcp_clients)
+			//auto sender_ptr = std::make_unique<sf::TcpSocket>();
+			auto& sender_ref = *sender.get();
+			if (selector.isReady(sender_ref))
 			{
-				(sender)->receive(RecivedPacket);
-			}
-			RecivedPacket >> clientMessage;
-			std::cout << clientMessage << std::endl;
-
-			//loop through all connected clients
-			for (auto& sender : tcp_clients)
-			{
-				(sender)->send(packet);
+				sf::Packet packet;
+				std::string string = "Test";
+				packet << string;
+				// print received string to console
+				sf::Packet RecivedPacket;
+				for (auto &client : tcp_clients)
+				{
+					(client)->receive(RecivedPacket);
+				}
+				std::string clientMessage;
+				RecivedPacket >> clientMessage;
+				std::cout << clientMessage;
+				//loop through all connected clients
+				for (auto &client : tcp_clients)
+				{
+					(client)->send(packet);
+				}
 			}
 		}
 	}

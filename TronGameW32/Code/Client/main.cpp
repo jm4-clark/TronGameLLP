@@ -1,10 +1,5 @@
-#include <SFML/Network.hpp>
+#include "Client.h"
 #include <SFML/Graphics.hpp>
-//#include "stdafx.h"
-
-#include <future>
-#include <iostream>
-#include <string>
 
 using TcpClient = sf::TcpSocket;
 using TcpClientPtr = std::unique_ptr<TcpClient>;
@@ -13,9 +8,7 @@ using TcpClients = std::vector<TcpClientPtr>;
 const sf::IpAddress SERVER_IP("127.0.0.1");
 constexpr int SERVER_TCP_PORT(53000);
 
-void client();
-bool connect(TcpClient&);
-void input(TcpClient&);
+
 
 int main()
 {	
@@ -35,68 +28,53 @@ int main()
 			case sf::Event::Closed:
 				window.close();
 				break;
-			case sf::Event::Resized:
-				/*std::cout<<"new window width:" << event.size.width <<" new window Height:"<< event.size.height<<std::endl;
-				printf("New window width: %i New window Height: %i", event.size.width, event.size.height);*/
-	
-				break;
-			case sf::Event::TextEntered:
-				if (event.text.unicode<128)
-				{
-					//printf("%c", event.text.unicode);
-				}
-	
-				break;
 			}
 	
 	
 		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
-		{
-			//player.move()
-		}
-	
+		Client cPtr;
+		cPtr.client();
 		window.clear();
 		window.draw(shape);
 		window.draw(player);
 		window.display();
-		client();
+		
 	
 	}
 	
 	return 0;
 }
 	
-void client()
+void Client::client()
 {
-	TcpClient socket;
-	if (!connect(socket))
+	if (!connect())
 	{
 		return;
 	}
 
 	auto handle = std::async(std::launch::async, [&]
 	{
-		// keep track of the socket status
+//keep track of the socket status
 		sf::Socket::Status status;
-		do
-		{
 			sf::Packet packet;
 			status = socket.receive(packet);
-			if (status == sf::Socket::Done)
+			if (status != sf::Socket::Disconnected)
+			{
+				if (status == sf::Socket::Done)
 				{
-				// Recvie message from sever
-				std::string message;
-				packet >> message;
+					// Recieve message from server
+					std::string message;
+					packet >> message;
+				}
 			}
-		} while (status != sf::Socket::Disconnected);
 });
 
 	//std::thread inputThread(&input, socket); 
-	return input(socket);
+
+	return input();
 }
 
-bool connect(TcpClient &socket)
+bool Client::connect()
 {
 	sf::Clock ping;
 	sf::Time t1 = ping.getElapsedTime();
@@ -110,17 +88,23 @@ bool connect(TcpClient &socket)
 
 }
 	
-void input(TcpClient &_client)
+Client::Client()
 {
-	while (true)
-	{
-		auto& sender_ref = _client;
-	
-		//send message to sever
-		sf::Packet packet;
-		std::string message = "HelloWorld";
-		packet << message;
+}
 
-		_client.send(packet);
-	}
+Client::~Client()
+{
+}
+
+void Client::input()
+{
+	
+	auto& sender_ref = socket;
+
+	//send message to sever
+	sf::Packet packet;
+	std::string message = "HelloWorld";
+	packet << message;
+	socket.send(packet);
+
 }
